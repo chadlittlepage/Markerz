@@ -36,7 +36,6 @@ a = Analysis(
         "unittest",
         "pydoc",
         "doctest",
-        "difflib",
         "PySide6",
         "PyQt5",
         "PyQt6",

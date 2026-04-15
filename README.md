@@ -1,5 +1,7 @@
 # Markerz
 
+![Markerz](docs/screenshot.png)
+
 A standalone marker management tool for DaVinci Resolve. Floating panel with bidirectional sync, live playhead tracking, full marker editing, and EDL/CSV import.
 
 No Python or dependencies required on the target machine. Just install and go.

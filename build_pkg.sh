@@ -96,10 +96,10 @@ echo "[4/4] Building installer package..."
 
 # Update welcome.html to remove Python requirement
 mkdir -p "$PKG_DIR/resources"
-cat > "$PKG_DIR/resources/welcome.html" << 'WELCOME'
+cat > "$PKG_DIR/resources/welcome.html" << WELCOME
 <html>
 <body style="font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 14px; color: #333;">
-<h2>Markerz v0.1.0</h2>
+<h2>Markerz v${VERSION}</h2>
 <p><strong>DaVinci Resolve Marker Manager</strong></p>
 <p>Markerz is a floating marker management panel for DaVinci Resolve with bidirectional sync, live playhead tracking, and full marker editing.</p>
 <h3>Features</h3>

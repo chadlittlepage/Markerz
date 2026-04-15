@@ -578,13 +578,23 @@ def run() -> None:
 
     # Resolve web directory (works both in dev and PyInstaller bundle)
     if getattr(sys, "frozen", False):
-        web_dir = str(Path(sys._MEIPASS) / "markerz" / "web")  # type: ignore[attr-defined]
+        # PyInstaller .app bundle: try Frameworks first, then Resources
+        base = Path(sys._MEIPASS)  # type: ignore[attr-defined]
+        web_dir = str(base / "markerz" / "web")
+        if not Path(web_dir).exists():
+            # Fallback: search relative to executable
+            web_dir = str(Path(sys.executable).parent.parent / "Resources" / "markerz" / "web")
     else:
         web_dir = str(Path(__file__).parent / "web")
 
+    index_path = os.path.join(web_dir, "index.html")
+    # Use file:// URL explicitly for WebKit compatibility
+    index_url = "file://" + os.path.abspath(index_path)
+    print(f"Loading UI from: {index_url}")
+
     window = webview.create_window(
         f"Markerz v{__version__} - {timeline_name}",
-        url=os.path.join(web_dir, "index.html"),
+        url=index_url,
         js_api=api,
         width=geo[2],
         height=geo[3],
