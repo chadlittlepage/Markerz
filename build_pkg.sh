@@ -32,6 +32,37 @@ fi
 
 echo "  App size: $(du -sh "$DIST_DIR/$APP_NAME.app" | cut -f1)"
 
+# --- Step 1b: Codesign the app for notarization ---
+if [ "$SIGN" = true ]; then
+    echo ""
+    echo "[1b] Codesigning app with Developer ID Application..."
+    APP_SIGN_ID="Developer ID Application: Chad Littlepage (72J767FV46)"
+
+    # Sign all binaries, dylibs, and frameworks inside the app with hardened runtime
+    find "$DIST_DIR/$APP_NAME.app" -type f \( -name "*.dylib" -o -name "*.so" -o -name "*.framework" \) -exec \
+        codesign --force --options runtime --timestamp --sign "$APP_SIGN_ID" {} \; 2>&1 | tail -5
+
+    # Sign all .so files (Python extensions)
+    find "$DIST_DIR/$APP_NAME.app" -type f -name "*.so" -exec \
+        codesign --force --options runtime --timestamp --sign "$APP_SIGN_ID" {} \; 2>&1 | tail -5
+
+    # Sign frameworks
+    find "$DIST_DIR/$APP_NAME.app/Contents/Frameworks" -maxdepth 2 -name "*.framework" -type d | while read fw; do
+        codesign --force --deep --options runtime --timestamp --sign "$APP_SIGN_ID" "$fw" 2>&1
+    done
+
+    # Sign the main executable
+    codesign --force --options runtime --timestamp --sign "$APP_SIGN_ID" \
+        "$DIST_DIR/$APP_NAME.app/Contents/MacOS/markerz" 2>&1
+
+    # Sign the entire app bundle
+    codesign --force --deep --options runtime --timestamp --sign "$APP_SIGN_ID" \
+        "$DIST_DIR/$APP_NAME.app" 2>&1
+
+    # Verify
+    codesign --verify --deep --strict "$DIST_DIR/$APP_NAME.app" 2>&1 && echo "  Codesign OK" || echo "  WARNING: Codesign verification failed"
+fi
+
 # --- Step 2: Prepare pkg root ---
 echo ""
 echo "[2/4] Preparing installer payload..."
