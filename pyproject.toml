@@ -15,6 +15,7 @@ authors = [
 dependencies = [
     "click>=8.1.0",
     "rich>=13.0.0",
+    "pywebview>=5.0",
 ]
 
 [project.scripts]

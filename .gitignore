@@ -19,3 +19,4 @@ env/
 htmlcov/
 *.log
 .DS_Store
+PKG Cert/

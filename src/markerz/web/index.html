@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Markerz</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Header -->
+  <div id="header">
+    <button id="btn-add" title="Add marker at playhead">+</button>
+    <button id="btn-import" title="Import markers from EDL/CSV">&#x2913;</button>
+    <input id="search" type="text" placeholder="Search markers..." autocomplete="off" spellcheck="false">
+    <button id="btn-settings" title="Settings">&#x2699;</button>
+  </div>
+
+  <!-- Marker table -->
+  <div id="table-container" tabindex="0">
+    <table id="marker-table">
+      <thead>
+        <tr>
+          <th class="col-dot" data-col="color"></th>
+          <th class="col-tc" data-col="tc">Timecode</th>
+          <th class="col-name" data-col="name">Name</th>
+          <th class="col-notes" data-col="note">Notes</th>
+          <th class="col-dur" data-col="duration_tc">Duration</th>
+        </tr>
+      </thead>
+      <tbody id="marker-body"></tbody>
+    </table>
+  </div>
+
+  <!-- Status bar -->
+  <div id="status-bar">Ready</div>
+
+  <!-- Context menu -->
+  <div id="context-menu">
+    <div class="ctx-item" data-action="edit">Edit Marker</div>
+    <div class="ctx-item" data-action="delete">Delete Marker</div>
+    <div class="ctx-sep"></div>
+    <div class="ctx-item" data-action="copy">Copy</div>
+    <div class="ctx-item" data-action="select-all">Select All</div>
+    <div class="ctx-sep"></div>
+    <div class="ctx-item" data-action="settings">Settings...</div>
+  </div>
+
+  <!-- Add/Edit marker modal -->
+  <div id="overlay-marker" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-title" id="marker-dlg-title">Markers</div>
+      <div class="modal-row" style="margin-top: 6px">
+        <label>Time</label>
+        <input type="text" id="marker-tc" maxlength="11" placeholder="00:00:00:00">
+        <label style="width: 65px">Duration</label>
+        <input type="text" id="marker-dur" maxlength="11" placeholder="00:00:00:01">
+      </div>
+      <label>Name</label>
+      <input type="text" id="marker-name">
+      <label>Notes</label>
+      <textarea id="marker-notes" placeholder="Add notes here..."></textarea>
+      <label>Color</label>
+      <div id="marker-colors" class="color-swatches"></div>
+      <div class="modal-buttons">
+        <button id="marker-remove" class="btn btn-danger" style="display:none">Remove Marker</button>
+        <div style="flex:1"></div>
+        <button id="marker-cancel" class="btn">Cancel</button>
+        <button id="marker-done" class="btn">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Import modal -->
+  <div id="overlay-import" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-title">Import Markers</div>
+      <div id="import-info" class="import-info"></div>
+      <div class="modal-row" style="margin-top: 8px">
+        <label style="width: 65px">Start TC:</label>
+        <input type="text" id="import-tc" maxlength="11" placeholder="00:00:00:00">
+      </div>
+      <div class="modal-buttons">
+        <button id="import-cancel" class="btn">Cancel</button>
+        <button id="import-do" class="btn">Import</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings modal -->
+  <div id="overlay-settings" class="modal-overlay">
+    <div class="modal" style="min-width: 420px">
+      <div class="modal-title">Display Settings</div>
+      <div id="settings-columns"></div>
+
+      <div class="settings-section">Row Height Padding</div>
+      <div class="setting-row">
+        <input type="range" id="setting-padding" min="0" max="40" value="2" style="max-width: 200px">
+        <span class="range-val" id="padding-val">2</span>
+      </div>
+
+      <div class="settings-section">Selection Highlight</div>
+      <div class="setting-row">
+        <input type="color" id="setting-highlight" value="#4a556c">
+      </div>
+
+      <div class="settings-section">Presets</div>
+      <div class="preset-row">
+        <select id="preset-list"><option value="">-- Select --</option></select>
+        <button class="btn" id="preset-load">Load</button>
+        <button class="btn" id="preset-delete">Del</button>
+      </div>
+      <div class="preset-row">
+        <input type="text" id="preset-name" placeholder="Preset name..." style="flex:1">
+        <button class="btn" id="preset-save">Save</button>
+      </div>
+      <div class="preset-row">
+        <button class="btn" id="preset-import">Import</button>
+        <button class="btn" id="preset-export">Export</button>
+      </div>
+
+      <div class="modal-buttons">
+        <button id="settings-reset" class="btn">Reset</button>
+        <button id="settings-done" class="btn">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

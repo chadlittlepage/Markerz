@@ -136,3 +136,11 @@ def status() -> None:
     console.print(f"  Timeline markers: {len(tl_markers.markers)}")
     if tl_markers.colors_used:
         console.print(f"  Colors: {', '.join(sorted(tl_markers.colors_used))}")
+
+
+@cli.command()
+def ui() -> None:
+    """Launch the Markerz floating window (connects to Resolve externally)."""
+    from markerz.launch import run
+
+    run()
