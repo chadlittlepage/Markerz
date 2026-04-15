@@ -55,10 +55,22 @@ def _save_settings(settings: dict[str, Any]) -> None:
 # ---------------------------------------------------------------------------
 
 COLOR_HEX = {
-    "Blue": "#3B82F6", "Cyan": "#06B6D4", "Green": "#22C55E", "Yellow": "#EAB308",
-    "Red": "#EF4444", "Pink": "#EC4899", "Purple": "#A855F7", "Fuchsia": "#D946EF",
-    "Rose": "#F43F5E", "Lavender": "#A78BFA", "Sky": "#38BDF8", "Mint": "#34D399",
-    "Lemon": "#FDE047", "Sand": "#D4A574", "Cocoa": "#8B6914", "Cream": "#FEF3C7",
+    "Blue": "#3B82F6",
+    "Cyan": "#06B6D4",
+    "Green": "#22C55E",
+    "Yellow": "#EAB308",
+    "Red": "#EF4444",
+    "Pink": "#EC4899",
+    "Purple": "#A855F7",
+    "Fuchsia": "#D946EF",
+    "Rose": "#F43F5E",
+    "Lavender": "#A78BFA",
+    "Sky": "#38BDF8",
+    "Mint": "#34D399",
+    "Lemon": "#FDE047",
+    "Sand": "#D4A574",
+    "Cocoa": "#8B6914",
+    "Cream": "#FEF3C7",
 }
 
 
@@ -103,15 +115,17 @@ class MarkerzAPI:
         for frame, data in raw.items():
             frame_int = int(frame)
             absolute = frame_int + self.start_frame
-            markers.append({
-                "frame": frame_int,
-                "tc": frame_to_timecode(absolute, self.fps, 0),
-                "color": data.get("color", "Blue"),
-                "name": data.get("name", ""),
-                "note": data.get("note", ""),
-                "duration": data.get("duration", 1),
-                "duration_tc": frame_to_timecode(data.get("duration", 1), self.fps, 0),
-            })
+            markers.append(
+                {
+                    "frame": frame_int,
+                    "tc": frame_to_timecode(absolute, self.fps, 0),
+                    "color": data.get("color", "Blue"),
+                    "name": data.get("name", ""),
+                    "note": data.get("note", ""),
+                    "duration": data.get("duration", 1),
+                    "duration_tc": frame_to_timecode(data.get("duration", 1), self.fps, 0),
+                }
+            )
         return sorted(markers, key=lambda m: m["frame"])
 
     def get_timeline_info(self) -> dict[str, Any]:
@@ -177,8 +191,12 @@ class MarkerzAPI:
         orig = raw.get(int(old_frame), {})
         if orig:
             self.timeline.AddMarker(
-                int(old_frame), orig.get("color", "Blue"), orig.get("name", ""),
-                orig.get("note", ""), orig.get("duration", 1), "",
+                int(old_frame),
+                orig.get("color", "Blue"),
+                orig.get("name", ""),
+                orig.get("note", ""),
+                orig.get("duration", 1),
+                "",
             )
         return "Failed to update (restored original)"
 
@@ -200,8 +218,12 @@ class MarkerzAPI:
         restored = 0
         for frame, data in snapshot.items():
             if self.timeline.AddMarker(
-                int(frame), data.get("color", "Blue"), data.get("name", ""),
-                data.get("note", ""), data.get("duration", 1), data.get("customData", ""),
+                int(frame),
+                data.get("color", "Blue"),
+                data.get("name", ""),
+                data.get("note", ""),
+                data.get("duration", 1),
+                data.get("customData", ""),
             ):
                 restored += 1
         return f"Undo: restored {restored} markers"
@@ -221,7 +243,8 @@ class MarkerzAPI:
         self._window.on_top = False
         try:
             result = self._window.create_file_dialog(
-                webview.OPEN_DIALOG, allow_multiple=False,
+                webview.OPEN_DIALOG,
+                allow_multiple=False,
                 file_types=("EDL files (*.edl)", "CSV files (*.csv)", "All files (*.*)"),
             )
         finally:
@@ -238,6 +261,7 @@ class MarkerzAPI:
         try:
             if ext == ".csv":
                 from markerz.importers.csv_edl import parse_csv_edl
+
                 for m in parse_csv_edl(filepath):
                     tcs.append(m.timecode)
                     colors.append(m.color)
@@ -246,11 +270,13 @@ class MarkerzAPI:
                 is_frameio = "|C:" in content and "|M:" in content
                 if is_frameio:
                     from markerz.importers.frameio_edl import parse_frameio_edl
+
                     for em in parse_frameio_edl(filepath):
                         tcs.append(em.timecode)
                         colors.append(em.color)
                 else:
                     from markerz.importers.standard_edl import parse_standard_edl
+
                     for sm in parse_standard_edl(filepath):
                         tcs.append(sm.timecode)
                         colors.append(sm.color)
@@ -286,6 +312,7 @@ class MarkerzAPI:
         try:
             if ext == ".csv":
                 from markerz.importers.csv_edl import parse_csv_edl
+
                 for m in parse_csv_edl(filepath):
                     tcs.append(m.timecode)
                     names.append(m.name)
@@ -305,6 +332,7 @@ class MarkerzAPI:
                 is_frameio = "|C:" in content and "|M:" in content
                 if is_frameio:
                     from markerz.importers.frameio_edl import parse_frameio_edl
+
                     for em in parse_frameio_edl(filepath):
                         tcs.append(em.timecode)
                         names.append(em.author)
@@ -313,6 +341,7 @@ class MarkerzAPI:
                         durations.append(em.duration)
                 else:
                     from markerz.importers.standard_edl import parse_standard_edl
+
                     for sm in parse_standard_edl(filepath):
                         tcs.append(sm.timecode)
                         names.append(sm.clip_name)
@@ -404,7 +433,8 @@ class MarkerzAPI:
         self._window.on_top = False
         try:
             result = self._window.create_file_dialog(
-                webview.OPEN_DIALOG, allow_multiple=False,
+                webview.OPEN_DIALOG,
+                allow_multiple=False,
                 file_types=("JSON files (*.json)", "All files (*.*)"),
             )
         finally:
@@ -506,8 +536,10 @@ class MarkerzAPI:
         # Save window geometry
         if self._window:
             self._settings["geometry"] = [
-                self._window.x, self._window.y,
-                self._window.width, self._window.height,
+                self._window.x,
+                self._window.y,
+                self._window.width,
+                self._window.height,
             ]
             _save_settings(self._settings)
 
