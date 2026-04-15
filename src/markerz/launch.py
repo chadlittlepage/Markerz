@@ -250,7 +250,7 @@ class MarkerzAPI:
         finally:
             self._window.on_top = True
         if result and len(result) > 0:
-            return result[0]
+            return str(result[0])
         return None
 
     def import_preview(self, filepath: str) -> dict[str, Any]:
