@@ -81,8 +81,8 @@ app = BUNDLE(
     info_plist={
         "CFBundleName": "Markerz",
         "CFBundleDisplayName": "Markerz",
-        "CFBundleShortVersionString": "0.2.0",
-        "CFBundleVersion": "0.2.0",
+        "CFBundleShortVersionString": "0.2.1",
+        "CFBundleVersion": "0.2.1",
         "LSMinimumSystemVersion": "12.0",
         "NSHighResolutionCapable": True,
         "LSBackgroundOnly": False,

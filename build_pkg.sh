@@ -3,7 +3,7 @@
 # Usage: ./build_pkg.sh [--sign]
 set -e
 
-VERSION="0.2.0"
+VERSION="0.2.1"
 APP_NAME="Markerz"
 BUNDLE_ID="com.chadlittlepage.markerz"
 BUILD_DIR="build"
@@ -81,42 +81,55 @@ mkdir -p "$PKG_DIR/scripts"
 cat > "$PKG_DIR/scripts/postinstall" << 'POSTINSTALL'
 #!/bin/bash
 # Markerz postinstall — install Resolve launcher script
+# Runs as root. On macOS 15+ TCC may restrict ~/Library access.
 set -e
 
 APP_EXEC="/Applications/Markerz.app/Contents/MacOS/markerz"
 
-# Resolve launcher script — calls the bundled app directly, no Python needed
-LAUNCHER="\"\"\"Launch Markerz marker manager.\"\"\"
-import subprocess
+LAUNCHER='"""Launch Markerz marker manager."""
+import subprocess, os
 subprocess.Popen(
-    [\"$APP_EXEC\", \"ui\"],
+    ["/Applications/Markerz.app/Contents/MacOS/markerz", "ui"],
     start_new_session=True,
+    stdout=open(os.devnull, "w"),
+    stderr=open(os.devnull, "w"),
 )
-"
+'
 
-# Try system-level Resolve Scripts (may fail on macOS 15 due to SIP)
-RESOLVE_SCRIPTS="/Library/Application Support/Blackmagic Design/DaVinci Resolve/Fusion/Scripts/Utility"
-mkdir -p "$RESOLVE_SCRIPTS" 2>/dev/null && echo "$LAUNCHER" > "$RESOLVE_SCRIPTS/Markerz.py" 2>/dev/null || true
+INSTALLED=0
 
-# Per-user install for EVERY real user — create the full path even if
-# Blackmagic Design dir doesn't exist yet (Resolve will find it on next launch)
+# --- System-level (all users) ---
+SYS_SCRIPTS="/Library/Application Support/Blackmagic Design/DaVinci Resolve/Fusion/Scripts/Utility"
+if mkdir -p "$SYS_SCRIPTS" 2>/dev/null; then
+    echo "$LAUNCHER" > "$SYS_SCRIPTS/Markerz.py" 2>/dev/null && INSTALLED=1
+fi
+
+# --- Per-user: try every real user's home ---
 for USER_HOME in /Users/*; do
     [ ! -d "$USER_HOME/Library" ] && continue
-    [ "$(basename "$USER_HOME")" = "Shared" ] && continue
+    UNAME=$(basename "$USER_HOME")
+    [ "$UNAME" = "Shared" ] && continue
+
     USER_SCRIPTS="$USER_HOME/Library/Application Support/Blackmagic Design/DaVinci Resolve/Fusion/Scripts/Utility"
-    mkdir -p "$USER_SCRIPTS" 2>/dev/null || continue
-    echo "$LAUNCHER" > "$USER_SCRIPTS/Markerz.py" 2>/dev/null || continue
-    OWNER=$(stat -f '%Su' "$USER_HOME")
-    chown -R "$OWNER" "$USER_HOME/Library/Application Support/Blackmagic Design" 2>/dev/null || true
+
+    # Try mkdir + write directly
+    if mkdir -p "$USER_SCRIPTS" 2>/dev/null; then
+        echo "$LAUNCHER" > "$USER_SCRIPTS/Markerz.py" 2>/dev/null && INSTALLED=1
+        chown -R "$UNAME" "$USER_HOME/Library/Application Support/Blackmagic Design" 2>/dev/null || true
+    else
+        # TCC blocked us — run as the target user instead
+        su "$UNAME" -c "mkdir -p \"$USER_SCRIPTS\" 2>/dev/null && echo '$LAUNCHER' > \"$USER_SCRIPTS/Markerz.py\"" 2>/dev/null && INSTALLED=1 || true
+    fi
 done
 
 # Symlink CLI into /usr/local/bin
 mkdir -p /usr/local/bin 2>/dev/null || true
 ln -sf "$APP_EXEC" /usr/local/bin/markerz 2>/dev/null || true
 
-echo "Markerz installed successfully."
+[ "$INSTALLED" = "1" ] && echo "Markerz installed successfully." || echo "Markerz installed. Run 'markerz ui' once to complete Resolve integration."
 exit 0
 POSTINSTALL
+chmod +x "$PKG_DIR/scripts/postinstall"
 chmod +x "$PKG_DIR/scripts/postinstall"
 
 # --- Step 4: Build .pkg ---
@@ -163,8 +176,15 @@ cat > "$PKG_DIR/resources/conclusion.html" << 'CONCLUSION'
 <li>Go to <strong>Workspace &gt; Scripts &gt; Markerz</strong></li>
 </ol>
 <p>You can also launch from Terminal: <code>markerz ui</code></p>
+<p style="color: #999; font-size: 11px;"><em>If Markerz does not appear in Scripts, restart DaVinci Resolve.</em></p>
 <h3>Settings</h3>
 <p>All settings (window position, column sizes, fonts, colors) are saved to <code>~/.markerz/settings.json</code> and persist across sessions.</p>
+<hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0 12px;">
+<p style="text-align: center; color: #666; font-size: 12px;">
+<strong>Created by Chad Littlepage</strong><br>
+chad.littlepage@gmail.com &nbsp;&bull;&nbsp; 323.974.0444<br>
+<span style="font-size: 11px; color: #999;">&copy; 2026 Chad Littlepage</span>
+</p>
 </body>
 </html>
 CONCLUSION

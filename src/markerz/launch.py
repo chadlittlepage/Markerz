@@ -549,8 +549,41 @@ class MarkerzAPI:
 # ---------------------------------------------------------------------------
 
 
+def _ensure_resolve_script() -> None:
+    """Install Resolve launcher script for the current user if missing."""
+    scripts_dir = (
+        Path.home()
+        / "Library"
+        / "Application Support"
+        / "Blackmagic Design"
+        / "DaVinci Resolve"
+        / "Fusion"
+        / "Scripts"
+        / "Utility"
+    )
+    launcher = scripts_dir / "Markerz.py"
+    if launcher.exists():
+        return
+    try:
+        scripts_dir.mkdir(parents=True, exist_ok=True)
+        launcher.write_text(
+            '"""Launch Markerz marker manager."""\n'
+            "import subprocess, os\n"
+            "subprocess.Popen(\n"
+            '    ["/Applications/Markerz.app/Contents/MacOS/markerz", "ui"],\n'
+            "    start_new_session=True,\n"
+            '    stdout=open(os.devnull, "w"),\n'
+            '    stderr=open(os.devnull, "w"),\n'
+            ")\n"
+        )
+        print(f"Installed Resolve launcher: {launcher}")
+    except OSError:
+        pass
+
+
 def run() -> None:
     """Launch the Markerz floating window."""
+    _ensure_resolve_script()
     resolve = dvr.scriptapp("Resolve")
     if not resolve:
         print("ERROR: Cannot connect to DaVinci Resolve.")
