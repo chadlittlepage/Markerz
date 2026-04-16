@@ -98,11 +98,17 @@ subprocess.Popen(
 
 INSTALLED=0
 
+# Install to ALL script folders (Utility, Edit, Color, Comp, Deliver)
+# so Markerz appears on every Resolve page
+SCRIPT_FOLDERS="Utility Edit Color Comp Deliver"
+
 # --- System-level (all users) ---
-SYS_SCRIPTS="/Library/Application Support/Blackmagic Design/DaVinci Resolve/Fusion/Scripts/Utility"
-if mkdir -p "$SYS_SCRIPTS" 2>/dev/null; then
-    echo "$LAUNCHER" > "$SYS_SCRIPTS/Markerz.py" 2>/dev/null && INSTALLED=1
-fi
+for FOLDER in $SCRIPT_FOLDERS; do
+    SYS_SCRIPTS="/Library/Application Support/Blackmagic Design/DaVinci Resolve/Fusion/Scripts/$FOLDER"
+    if mkdir -p "$SYS_SCRIPTS" 2>/dev/null; then
+        echo "$LAUNCHER" > "$SYS_SCRIPTS/Markerz.py" 2>/dev/null && INSTALLED=1
+    fi
+done
 
 # --- Per-user: try every real user's home ---
 for USER_HOME in /Users/*; do
@@ -110,16 +116,18 @@ for USER_HOME in /Users/*; do
     UNAME=$(basename "$USER_HOME")
     [ "$UNAME" = "Shared" ] && continue
 
-    USER_SCRIPTS="$USER_HOME/Library/Application Support/Blackmagic Design/DaVinci Resolve/Fusion/Scripts/Utility"
+    for FOLDER in $SCRIPT_FOLDERS; do
+        USER_SCRIPTS="$USER_HOME/Library/Application Support/Blackmagic Design/DaVinci Resolve/Fusion/Scripts/$FOLDER"
 
-    # Try mkdir + write directly
-    if mkdir -p "$USER_SCRIPTS" 2>/dev/null; then
-        echo "$LAUNCHER" > "$USER_SCRIPTS/Markerz.py" 2>/dev/null && INSTALLED=1
-        chown -R "$UNAME" "$USER_HOME/Library/Application Support/Blackmagic Design" 2>/dev/null || true
-    else
-        # TCC blocked us — run as the target user instead
-        su "$UNAME" -c "mkdir -p \"$USER_SCRIPTS\" 2>/dev/null && echo '$LAUNCHER' > \"$USER_SCRIPTS/Markerz.py\"" 2>/dev/null && INSTALLED=1 || true
-    fi
+        # Try mkdir + write directly
+        if mkdir -p "$USER_SCRIPTS" 2>/dev/null; then
+            echo "$LAUNCHER" > "$USER_SCRIPTS/Markerz.py" 2>/dev/null && INSTALLED=1
+        else
+            # TCC blocked us — run as the target user instead
+            su "$UNAME" -c "mkdir -p \"$USER_SCRIPTS\" 2>/dev/null && echo '$LAUNCHER' > \"$USER_SCRIPTS/Markerz.py\"" 2>/dev/null && INSTALLED=1 || true
+        fi
+    done
+    chown -R "$UNAME" "$USER_HOME/Library/Application Support/Blackmagic Design" 2>/dev/null || true
 done
 
 # Symlink CLI into /usr/local/bin
@@ -140,25 +148,13 @@ echo "[4/4] Building installer package..."
 mkdir -p "$PKG_DIR/resources"
 cat > "$PKG_DIR/resources/welcome.html" << WELCOME
 <html>
-<body style="font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 14px; color: #333;">
-<h2>Markerz v${VERSION}</h2>
-<p><strong>DaVinci Resolve Marker Manager</strong></p>
-<p>Markerz is a floating marker management panel for DaVinci Resolve with bidirectional sync, live playhead tracking, and full marker editing.</p>
-<h3>Features</h3>
-<ul>
-<li>Live bidirectional sync with Resolve timeline markers</li>
-<li>Edit color, timecode, name, notes, and duration</li>
-<li>Import markers from Frame.io EDL, standard EDL, and CSV</li>
-<li>Search, sort, multi-select, undo</li>
-<li>Customizable fonts, colors, and highlight</li>
-<li>Persistent settings across sessions</li>
-</ul>
-<h3>Requirements</h3>
-<ul>
-<li>DaVinci Resolve 18+ with scripting set to Local</li>
-<li>macOS 12+</li>
-</ul>
-<p>This installer will place Markerz in your Applications folder and add it to Resolve's Workspace &gt; Scripts menu.</p>
+<body style="font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 13px; color: #333; margin: 0; padding: 0;">
+<h2 style="margin-top: 0;">Markerz v${VERSION}</h2>
+<p style="margin: 2px 0;"><strong>DaVinci Resolve Marker Manager</strong></p>
+<p style="margin: 6px 0 8px;">A floating marker panel with bidirectional sync, live playhead tracking, and full marker editing.</p>
+<p style="margin: 2px 0; font-size: 12px;"><strong>Features:</strong> Live sync, edit markers (color, TC, name, notes, duration), import EDL/CSV, search, sort, multi-select, undo, customizable display, settings presets.</p>
+<p style="margin: 8px 0 2px; font-size: 12px;"><strong>Requires:</strong> DaVinci Resolve 18+ (scripting set to Local), macOS 12+</p>
+<p style="margin: 8px 0 0; font-size: 12px;">Installs to Applications and adds to Resolve's Workspace &gt; Scripts menu.</p>
 </body>
 </html>
 WELCOME

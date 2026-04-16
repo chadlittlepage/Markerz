@@ -551,7 +551,17 @@ class MarkerzAPI:
 
 def _ensure_resolve_script() -> None:
     """Install Resolve launcher script for the current user if missing."""
-    scripts_dir = (
+    launcher_code = (
+        '"""Launch Markerz marker manager."""\n'
+        "import subprocess, os\n"
+        "subprocess.Popen(\n"
+        '    ["/Applications/Markerz.app/Contents/MacOS/markerz", "ui"],\n'
+        "    start_new_session=True,\n"
+        '    stdout=open(os.devnull, "w"),\n'
+        '    stderr=open(os.devnull, "w"),\n'
+        ")\n"
+    )
+    base = (
         Path.home()
         / "Library"
         / "Application Support"
@@ -559,26 +569,19 @@ def _ensure_resolve_script() -> None:
         / "DaVinci Resolve"
         / "Fusion"
         / "Scripts"
-        / "Utility"
     )
-    launcher = scripts_dir / "Markerz.py"
-    if launcher.exists():
-        return
-    try:
-        scripts_dir.mkdir(parents=True, exist_ok=True)
-        launcher.write_text(
-            '"""Launch Markerz marker manager."""\n'
-            "import subprocess, os\n"
-            "subprocess.Popen(\n"
-            '    ["/Applications/Markerz.app/Contents/MacOS/markerz", "ui"],\n'
-            "    start_new_session=True,\n"
-            '    stdout=open(os.devnull, "w"),\n'
-            '    stderr=open(os.devnull, "w"),\n'
-            ")\n"
-        )
-        print(f"Installed Resolve launcher: {launcher}")
-    except OSError:
-        pass
+    # Install to all script folders so Markerz appears on every Resolve page
+    for folder in ("Utility", "Edit", "Color", "Comp", "Deliver"):
+        scripts_dir = base / folder
+        launcher = scripts_dir / "Markerz.py"
+        if launcher.exists():
+            continue
+        try:
+            scripts_dir.mkdir(parents=True, exist_ok=True)
+            launcher.write_text(launcher_code)
+            print(f"Installed Resolve launcher: {launcher}")
+        except OSError:
+            pass
 
 
 def run() -> None:
