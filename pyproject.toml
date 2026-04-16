@@ -50,5 +50,9 @@ module = [
 ]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = "markerz.scripts.*"
+ignore_errors = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]

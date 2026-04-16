@@ -94,10 +94,53 @@ subprocess.Popen(
 )
 '
 
+MARK_CUTS='"""Add a marker at every cut point on the current DaVinci Resolve timeline."""
+import sys
+
+resolve = bmd.scriptapp("Resolve")
+if not resolve:
+    print("Could not connect to DaVinci Resolve.")
+    sys.exit(1)
+
+project = resolve.GetProjectManager().GetCurrentProject()
+timeline = project.GetCurrentTimeline()
+
+if not timeline:
+    print("No timeline is currently open.")
+    sys.exit(1)
+
+track_count = timeline.GetTrackCount("video")
+cut_frames = set()
+
+for track in range(1, track_count + 1):
+    clips = timeline.GetItemListInTrack("video", track)
+    if not clips:
+        continue
+    for clip in clips:
+        cut_frames.add(clip.GetStart())
+        cut_frames.add(clip.GetEnd())
+
+tl_start = timeline.GetStartFrame()
+tl_end = timeline.GetEndFrame()
+cut_frames.discard(tl_start)
+cut_frames.discard(tl_end)
+
+existing = timeline.GetMarkers()
+added = 0
+for frame in sorted(cut_frames):
+    offset = frame - tl_start
+    if offset in existing:
+        continue
+    timeline.AddMarker(offset, "Blue", "Cut", "", 1)
+    added += 1
+
+print(f"Done - added {added} markers across {track_count} video track(s).")
+'
+
 INSTALLED=0
 
 # Install to ALL script folders (Utility, Edit, Color, Comp, Deliver)
-# so Markerz appears on every Resolve page
+# so scripts appear on every Resolve page
 SCRIPT_FOLDERS="Utility Edit Color Comp Deliver"
 
 # --- System-level (all users) ---
@@ -105,6 +148,7 @@ for FOLDER in $SCRIPT_FOLDERS; do
     SYS_SCRIPTS="/Library/Application Support/Blackmagic Design/DaVinci Resolve/Fusion/Scripts/$FOLDER"
     if mkdir -p "$SYS_SCRIPTS" 2>/dev/null; then
         echo "$LAUNCHER" > "$SYS_SCRIPTS/Markerz.py" 2>/dev/null && INSTALLED=1
+        echo "$MARK_CUTS" > "$SYS_SCRIPTS/mark_cuts.py" 2>/dev/null || true
     fi
 done
 
@@ -120,9 +164,10 @@ for USER_HOME in /Users/*; do
         # Try mkdir + write directly
         if mkdir -p "$USER_SCRIPTS" 2>/dev/null; then
             echo "$LAUNCHER" > "$USER_SCRIPTS/Markerz.py" 2>/dev/null && INSTALLED=1
+            echo "$MARK_CUTS" > "$USER_SCRIPTS/mark_cuts.py" 2>/dev/null || true
         else
             # TCC blocked us — run as the target user instead
-            su "$UNAME" -c "mkdir -p \"$USER_SCRIPTS\" 2>/dev/null && echo '$LAUNCHER' > \"$USER_SCRIPTS/Markerz.py\"" 2>/dev/null && INSTALLED=1 || true
+            su "$UNAME" -c "mkdir -p \"$USER_SCRIPTS\" 2>/dev/null && echo '$LAUNCHER' > \"$USER_SCRIPTS/Markerz.py\" && echo '$MARK_CUTS' > \"$USER_SCRIPTS/mark_cuts.py\"" 2>/dev/null && INSTALLED=1 || true
         fi
     done
     chown -R "$UNAME" "$USER_HOME/Library/Application Support/Blackmagic Design" 2>/dev/null || true

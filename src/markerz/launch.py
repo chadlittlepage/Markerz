@@ -570,16 +570,55 @@ def _ensure_resolve_script() -> None:
         / "Fusion"
         / "Scripts"
     )
+    mark_cuts_code = (
+        '"""Add a marker at every cut point on the current DaVinci Resolve timeline."""\n'
+        "import sys\n\n"
+        'resolve = bmd.scriptapp("Resolve")\n'
+        "if not resolve:\n"
+        '    print("Could not connect to DaVinci Resolve.")\n'
+        "    sys.exit(1)\n\n"
+        "project = resolve.GetProjectManager().GetCurrentProject()\n"
+        "timeline = project.GetCurrentTimeline()\n\n"
+        "if not timeline:\n"
+        '    print("No timeline is currently open.")\n'
+        "    sys.exit(1)\n\n"
+        'track_count = timeline.GetTrackCount("video")\n'
+        "cut_frames = set()\n\n"
+        "for track in range(1, track_count + 1):\n"
+        '    clips = timeline.GetItemListInTrack("video", track)\n'
+        "    if not clips:\n"
+        "        continue\n"
+        "    for clip in clips:\n"
+        "        cut_frames.add(clip.GetStart())\n"
+        "        cut_frames.add(clip.GetEnd())\n\n"
+        "tl_start = timeline.GetStartFrame()\n"
+        "tl_end = timeline.GetEndFrame()\n"
+        "cut_frames.discard(tl_start)\n"
+        "cut_frames.discard(tl_end)\n\n"
+        "existing = timeline.GetMarkers()\n"
+        "added = 0\n"
+        "for frame in sorted(cut_frames):\n"
+        "    offset = frame - tl_start\n"
+        "    if offset in existing:\n"
+        "        continue\n"
+        '    timeline.AddMarker(offset, "Blue", "Cut", "", 1)\n'
+        "    added += 1\n\n"
+        'print(f"Done - added {added} markers across {track_count} video track(s).")\n'
+    )
+
     # Install to all script folders so Markerz appears on every Resolve page
     for folder in ("Utility", "Edit", "Color", "Comp", "Deliver"):
         scripts_dir = base / folder
-        launcher = scripts_dir / "Markerz.py"
-        if launcher.exists():
-            continue
         try:
             scripts_dir.mkdir(parents=True, exist_ok=True)
-            launcher.write_text(launcher_code)
-            print(f"Installed Resolve launcher: {launcher}")
+            launcher = scripts_dir / "Markerz.py"
+            if not launcher.exists():
+                launcher.write_text(launcher_code)
+                print(f"Installed Resolve launcher: {launcher}")
+            mc = scripts_dir / "mark_cuts.py"
+            if not mc.exists():
+                mc.write_text(mark_cuts_code)
+                print(f"Installed mark_cuts: {mc}")
         except OSError:
             pass
 
