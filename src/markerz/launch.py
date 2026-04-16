@@ -638,6 +638,7 @@ def run() -> None:
         y=geo[1],
         on_top=True,
         min_size=(400, 300),
+        background_color="#1a1a1a",
     )
     api._window = window
 
