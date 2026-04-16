@@ -94,22 +94,20 @@ subprocess.Popen(
 )
 "
 
-# System-level Resolve Scripts (available to all users)
+# Try system-level Resolve Scripts (may fail on macOS 15 due to SIP)
 RESOLVE_SCRIPTS="/Library/Application Support/Blackmagic Design/DaVinci Resolve/Fusion/Scripts/Utility"
-mkdir -p "$RESOLVE_SCRIPTS" 2>/dev/null || true
-echo "$LAUNCHER" > "$RESOLVE_SCRIPTS/Markerz.py"
+mkdir -p "$RESOLVE_SCRIPTS" 2>/dev/null && echo "$LAUNCHER" > "$RESOLVE_SCRIPTS/Markerz.py" 2>/dev/null || true
 
-# Per-user install for every real user who has a Resolve config
+# Per-user install for EVERY real user — create the full path even if
+# Blackmagic Design dir doesn't exist yet (Resolve will find it on next launch)
 for USER_HOME in /Users/*; do
     [ ! -d "$USER_HOME/Library" ] && continue
     [ "$(basename "$USER_HOME")" = "Shared" ] && continue
-    if [ -d "$USER_HOME/Library/Application Support/Blackmagic Design" ]; then
-        USER_SCRIPTS="$USER_HOME/Library/Application Support/Blackmagic Design/DaVinci Resolve/Fusion/Scripts/Utility"
-        mkdir -p "$USER_SCRIPTS" 2>/dev/null || true
-        cp "$RESOLVE_SCRIPTS/Markerz.py" "$USER_SCRIPTS/Markerz.py" 2>/dev/null || true
-        OWNER=$(stat -f '%Su' "$USER_HOME")
-        chown "$OWNER" "$USER_SCRIPTS/Markerz.py" 2>/dev/null || true
-    fi
+    USER_SCRIPTS="$USER_HOME/Library/Application Support/Blackmagic Design/DaVinci Resolve/Fusion/Scripts/Utility"
+    mkdir -p "$USER_SCRIPTS" 2>/dev/null || continue
+    echo "$LAUNCHER" > "$USER_SCRIPTS/Markerz.py" 2>/dev/null || continue
+    OWNER=$(stat -f '%Su' "$USER_HOME")
+    chown -R "$OWNER" "$USER_HOME/Library/Application Support/Blackmagic Design" 2>/dev/null || true
 done
 
 # Symlink CLI into /usr/local/bin
